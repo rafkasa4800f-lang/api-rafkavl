@@ -1,0 +1,17 @@
+{
+  "name": "brat-api-gabungan",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web + API Brat image-only siap deploy Vercel, lengkap dengan tester dan kode plugin bot API.",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "brat-canvas": "file:./brat-canvas"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brat API Gabungan</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #080c16;
+      --card: #111827;
+      --card2: #0b1220;
+      --line: #1f2937;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --btn: #2563eb;
+      --btn2: #374151;
+      --ok: #86efac;
+      --warn: #facc15;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.25), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(178,102,255,.18), transparent 35%),
+        var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 22px 12px 50px;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .hero {
+      border: 1px solid rgba(96,165,250,.25);
+      background: rgba(17,24,39,.78);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 22px 60px rgba(0,0,0,.28);
+    }
+    h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: -.5px; }
+    .hero p { margin: 0; color: var(--muted); line-height: 1.6; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .badge {
+      border: 1px solid #334155;
+      color: #dbeafe;
+      background: #0f172a;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 13px;
+    }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+    .tab-btn {
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #dbeafe;
+      border-radius: 12px;
+      padding: 11px 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: var(--btn); border-color: #3b82f6; color: #fff; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-wide { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+    @media (max-width: 850px) { .grid, .grid-wide { grid-template-columns: 1fr; } }
+    .card {
+      background: rgba(17,24,39,.9);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 15px 42px rgba(0,0,0,.22);
+    }
+    .card h2 { margin: 0 0 12px; font-size: 20px; }
+    .card h3 { margin: 18px 0 10px; font-size: 16px; color: #dbeafe; }
+    .note { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 7px; color: #d1d5db; font-size: 14px; }
+    textarea, input, select {
+      width: 100%;
+      border: 1px solid #334155;
+      background: var(--card2);
+      color: var(--text);
+      border-radius: 13px;
+      padding: 12px;
+      outline: none;
+      font-size: 15px;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .small-textarea { min-height: 80px; }
+    .codearea { min-height: 440px; font-family: Consolas, Monaco, monospace; font-size: 12px; line-height: 1.45; }
+    .row { display: grid; grid-template-columns: 1fr 70px; gap: 10px; align-items: center; }
+    .color-preview { height: 45px; border-radius: 13px; border: 1px solid #475569; background: #000; }
+    .check { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .check input { width: auto; }
+    .btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    button {
+      border: 0;
+      border-radius: 13px;
+      padding: 12px 14px;
+      cursor: pointer;
+      background: var(--btn);
+      color: white;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    button.secondary { background: var(--btn2); }
+    button.ghost { background: transparent; border: 1px solid #334155; color: #dbeafe; }
+    button:hover { filter: brightness(1.1); }
+    .preview-box {
+      background: #020617;
+      border: 1px dashed #334155;
+      border-radius: 18px;
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .preview-box img { max-width: 100%; width: 350px; background: #fff; border-radius: 14px; }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #020617;
+      border: 1px solid #1f2937;
+      color: #d1d5db;
+      border-radius: 14px;
+      padding: 13px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      min-height: 76px;
+    }
+    .status { min-height: 20px; margin-top: 10px; color: var(--ok); font-size: 13px; }
+    .warn { color: var(--warn); }
+    .list { display: grid; gap: 8px; margin-top: 8px; }
+    .item { border: 1px solid #243244; background: #0b1220; border-radius: 14px; padding: 12px; color: #d1d5db; }
+    .item code { color: #93c5fd; }
+    a { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Brat API Gabungan</h1>
+      <p>Ini satu project lengkap: tampilan web, endpoint API, tester URL, contoh kode plugin bot, dan konsep timpa/banyak frame. Warna cukup pakai kode HEX, bukan preset.</p>
+      <div class="badge-row">
+        <span class="badge">Web tester</span>
+        <span class="badge">GET /api/brat</span>
+        <span class="badge">POST /api/brat</span>
+        <span class="badge">Plugin bot via API</span>
+        <span class="badge">Image-only tanpa bratvid</span>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="web">1. Pakai via Web</button>
+      <button class="tab-btn" data-tab="api">2. API Tester</button>
+      <button class="tab-btn" data-tab="bot">3. Kode Fitur Bot</button>
+      <button class="tab-btn" data-tab="frame">4. Konsep Timpa</button>
+      <button class="tab-btn" data-tab="deploy">5. Deploy</button>
+    </nav>
+
+    <section id="tab-web" class="tab active">
+      <div class="grid-wide">
+        <div class="card">
+          <h2>Pakai langsung dari web</h2>
+          <div class="form-group">
+            <label>Teks</label>
+            <textarea id="textInput" placeholder="Tulis teks brat di sini">halo rafka</textarea>
+          </div>
+          <div class="form-group">
+            <label>Kode warna HEX</label>
+            <div class="row">
+              <input id="colorInput" value="#000000" placeholder="#ff0000" />
+              <div id="colorPreview" class="color-preview"></div>
+            </div>
+            <div class="note">Contoh: <code>#ff0000</code>, <code>#b266ff</code>, <code>#1e90ff</code>, <code>#f4a2b9</code></div>
+          </div>
+          <label class="check">
+            <input id="style2Input" type="checkbox" />
+            Style2: warna jadi background, teks putih
+          </label>
+          <div class="btns">
+            <button onclick="renderPreview()">Buat Preview</button>
+            <button class="secondary" onclick="downloadPng()">Download PNG</button>
+            <button class="ghost" onclick="copyValue(buildApiUrl(), 'statusWeb')">Copy URL API</button>
+          </div>
+          <div id="statusWeb" class="status"></div>
+        </div>
+        <div class="card">
+          <h2>Preview</h2>
+          <div class="preview-box">
+            <img id="previewImg" alt="Preview Brat" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-api" class="tab">
+      <div class="grid">
+        <div class="card">
+          <h2>URL API</h2>
+          <p class="note">Bagian ini buat tester request API. Output URL bisa dipakai di bot, browser, atau fetch.</p>
+          <pre id="apiUrlBox"></pre>
+          <div class="btns" style="margin-top:10px">
+            <button onclick="copyFrom('apiUrlBox', 'statusApi')">Copy URL</button>
+            <button class="secondary" onclick="openApiUrl()">Buka URL</button>
+          </div>
+          <div id="statusApi" class="status"></div>
+          <h3>Parameter</h3>
+          <div class="list">
+            <div class="item"><code>text</code> wajib, isi teks brat.</div>
+            <div class="item"><code>color</code> kode HEX. Bisa <code>ff0000</code> atau <code>#ff0000</code>.</div>
+            <div class="item"><code>style2=1</code> warna jadi background, teks putih.</div>
+            <div class="item"><code>w</code> dan <code>h</code> ukuran canvas, default 500.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Contoh Fetch</h2>
+          <pre id="fetchCodeBox"></pre>
+          <div class="btns" style="margin-top:10px">
+            <button onclick="copyFrom('fetchCodeBox', 'statusFetch')">Copy Kode Fetch</button>
+          </div>
+          <div id="statusFetch" class="status"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-bot" class="tab">
+      <div class="grid">
+        <div class="card">
+          <h2>Command fitur bot</h2>
+          <p class="note">Command warna dibuat pakai kode saja.</p>
+          <pre id="commandBox"></pre>
+          <button onclick="copyFrom('commandBox', 'statusCommand')">Copy Command</button>
+          <div id="statusCommand" class="status"></div>
+          <h3>Penjelasan singkat</h3>
+          <div class="list">
+            <div class="item"><code>.brat teks</code> = teks hitam, background putih.</div>
+            <div class="item"><code>.brat2 teks</code> = background hitam, teks putih.</div>
+            <div class="item"><code>.bratkode #ff0000 teks</code> = teks merah, background putih.</div>
+            <div class="item"><code>.bratkode2 #ff0000 teks</code> = background merah, teks putih.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Kode plugin bot via API</h2>
+          <p class="note">Kode ini sudah digabung di folder <code>examples/plugin-brat-api.js</code>. Ubah domain <code>DEFAULT_BRAT_API</code> ke domain Vercel kamu.</p>
+          <textarea id="pluginCodeBox" class="codearea" spellcheck="false"></textarea>
+          <div class="btns" style="margin-top:10px">
+            <button onclick="copyArea('pluginCodeBox', 'statusPlugin')">Copy Full Plugin</button>
+          </div>
+          <div id="statusPlugin" class="status"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-frame" class="tab">
+      <div class="grid">
+        <div class="card">
+          <h2>Konsep timpa/banyak-banyak</h2>
+          <p class="note">Bratvid tidak dibuat di Vercel. API hanya membuat PNG. Bot/VPS nanti panggil API berkali-kali untuk membuat frame.</p>
+          <pre id="frameUrlsBox"></pre>
+          <div class="btns" style="margin-top:10px">
+            <button onclick="makeFrameUrls()">Generate URL Frame</button>
+            <button class="secondary" onclick="copyFrom('frameUrlsBox', 'statusFrame')">Copy URL Frame</button>
+          </div>
+          <div id="statusFrame" class="status"></div>
+        </div>
+        <div class="card">
+          <h2>Kode konsep frame</h2>
+          <textarea id="frameCodeBox" class="codearea" spellcheck="false"></textarea>
+          <button onclick="copyArea('frameCodeBox', 'statusFrameCode')">Copy Kode Frame</button>
+          <div id="statusFrameCode" class="status"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-deploy" class="tab">
+      <div class="card">
+        <h2>Cara deploy ke GitHub + Vercel</h2>
+        <div class="list">
+          <div class="item">1. Upload semua isi folder project ini ke repository GitHub.</div>
+          <div class="item">2. Buka Vercel, pilih <code>Add New Project</code>, lalu import repository tadi.</div>
+          <div class="item">3. Framework preset boleh <code>Other</code>. Build command boleh kosong.</div>
+          <div class="item">4. Setelah deploy, buka domain Vercel kamu. Halaman ini akan muncul sebagai web tester.</div>
+          <div class="item">5. Endpoint API aktif di <code>/api/brat?text=halo&color=ff0000</code>.</div>
+        </div>
+        <h3>File penting dalam project</h3>
+        <pre>api/brat.js              endpoint generate PNG
+api/index.js             info API JSON
+public/index.html        tampilan web gabungan
+examples/plugin-brat-api.js kode fitur bot via API
+examples/timpa-banyak-frame.js konsep frame banyak-banyak
+brat-canvas/             package lokal dari ZIP kamu
+package.json             dependency Vercel</pre>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const PLUGIN_CODE = "// \u2728 Plugin sticker - brat API image-only \u2728\n// Command:\n// .brat teks\n// .brat2 teks\n// .bratkode #ff0000 teks\n// .bratkode2 #ff0000 teks\n//\n// Versi ini TIDAK import brat-canvas di bot.\n// Bot hanya request PNG dari API Vercel, lalu PNG diubah jadi sticker.\n\nimport { imageToWebp, addExif } from '../../function/events/exif.js';\nimport fs from 'fs';\n\n// Ganti ke domain Vercel kamu.\n// Bisa juga set di global: global.bratApi = 'https://nama-project.vercel.app'\nconst DEFAULT_BRAT_API = 'https://nama-project.vercel.app';\n\nfunction cleanBaseUrl(url) {\n  return String(url || DEFAULT_BRAT_API).replace(/\\/$/, '');\n}\n\nfunction isHexColor(value) {\n  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(String(value || '').trim());\n}\n\nfunction removeHash(hex) {\n  return String(hex || '#000000').replace('#', '');\n}\n\nfunction buildBratApiUrl({ apiBase, text, color, isStyle2 }) {\n  const url = new URL('/api/brat', cleanBaseUrl(apiBase));\n  url.searchParams.set('text', text);\n  url.searchParams.set('color', removeHash(color));\n  url.searchParams.set('emojiStyle', 'apple');\n  url.searchParams.set('w', '500');\n  url.searchParams.set('h', '500');\n  url.searchParams.set('blur', '0');\n  if (isStyle2) url.searchParams.set('style2', '1');\n  return url.toString();\n}\n\nasync function fetchBuffer(url) {\n  const res = await fetch(url);\n  if (!res.ok) {\n    const errText = await res.text().catch(() => '');\n    throw new Error(errText || `API error ${res.status}`);\n  }\n  return Buffer.from(await res.arrayBuffer());\n}\n\nlet handler = async (m, { jagoanproject, args, text, usedPrefix, command }) => {\n  const cmdLower = command.toLowerCase();\n  const isKode = cmdLower.startsWith('bratkode');\n  const isStyle2 = cmdLower.endsWith('2');\n\n  let cleanText = text ? text : m.quoted?.text || m.quoted?.caption || m.quoted?.description || '';\n  let color = '#000000';\n\n  if (isKode) {\n    if (!args[0] || !isHexColor(args[0])) {\n      throw `*\ud83d\udcdd CONTOH :*\\n\\n\u2014 ${usedPrefix + command} #ff0000 palak bapak kau`;\n    }\n\n    color = args[0].trim();\n    cleanText = text.replace(args[0], '').trim();\n    if (!cleanText) cleanText = m.quoted?.text || m.quoted?.caption || m.quoted?.description || '';\n  }\n\n  if (!cleanText) throw `*\ud83d\udcdd CONTOH :*\\n\\n\u2014 ${usedPrefix + command} palak bapak kau`;\n  if (cleanText.length > 15000) throw `*\ud83d\udea9 Teks terlalu panjang! Maksimal 15.000 karakter.*`;\n\n  const packname = global.packname || 'Jagoan Project';\n  const author = global.author || 'Mas Rafka';\n  const errPic = fs.existsSync('./src/emror.webp') ? fs.readFileSync('./src/emror.webp') : null;\n\n  try {\n    await jagoanproject.sendMessage(m.chat, { react: { text: '\u23f3', key: m.key } });\n\n    const apiUrl = buildBratApiUrl({\n      apiBase: global.bratApi || DEFAULT_BRAT_API,\n      text: cleanText,\n      color,\n      isStyle2\n    });\n\n    const pngBuffer = await fetchBuffer(apiUrl);\n    const webpBuffer = await imageToWebp(pngBuffer);\n    const finalSticker = await addExif(webpBuffer, packname, author);\n\n    await jagoanproject.sendMessage(m.chat, { sticker: finalSticker }, { quoted: m });\n    await jagoanproject.sendMessage(m.chat, { react: { text: '\u2705', key: m.key } });\n  } catch (e) {\n    console.error('\u274c Error plugin brat API:', e);\n    const errorMessage = `\u274c Terjadi kesalahan.\\n\\n*Log:* ${e.message || e}`;\n\n    if (errPic) {\n      try {\n        await jagoanproject.sendFile(m.chat, errPic, 'error.webp', errorMessage, m);\n      } catch {\n        if (typeof m.reply === 'function') await m.reply(errorMessage);\n      }\n    } else {\n      if (typeof m.reply === 'function') await m.reply(errorMessage);\n    }\n\n    await jagoanproject.sendMessage(m.chat, { react: { text: '\u274c', key: m.key } });\n  }\n};\n\nhandler.help = ['brat <teks>', 'brat2 <teks>', 'bratkode #hex <teks>', 'bratkode2 #hex <teks>'];\nhandler.tags = ['sticker'];\nhandler.command = /^(brat|bratkode)(2)?$/i;\nhandler.register = true;\nhandler.limit = true;\n\nexport default handler;\n";
+    const FRAME_CODE = "// Konsep timpa/banyak-banyak:\n// API Vercel cuma bikin PNG. Penggabungan jadi gif/webp/video dilakukan di bot/VPS.\n// Contoh ini membuat URL frame bertahap per kata.\n\nconst API_BASE = 'https://nama-project.vercel.app';\nconst teks = 'aku suka kamu banget';\nconst warna = '#b266ff';\nconst style2 = false;\n\nconst words = teks.split(/\\s+/);\nconst frameUrls = [];\n\nfor (let i = 1; i <= words.length; i++) {\n  const partialText = words.slice(0, i).join(' ');\n  const url = new URL('/api/brat', API_BASE);\n  url.searchParams.set('text', partialText);\n  url.searchParams.set('color', warna.replace('#', ''));\n  if (style2) url.searchParams.set('style2', '1');\n  frameUrls.push(url.toString());\n}\n\nconsole.log(frameUrls);\n";
+
+    const $ = (id) => document.getElementById(id);
+
+    function normalizeHex(value, fallback = '#000000') {
+      let hex = String(value || '').trim();
+      if (!hex) return fallback;
+      if (!hex.startsWith('#')) hex = '#' + hex;
+      if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(hex)) return null;
+      return hex.toLowerCase();
+    }
+
+    function withoutHash(hex) {
+      return String(hex || '#000000').replace('#', '');
+    }
+
+    function getText() {
+      return $('textInput').value.trim() || 'halo rafka';
+    }
+
+    function getColor() {
+      return normalizeHex($('colorInput').value) || '#000000';
+    }
+
+    function buildApiUrl(extra = {}) {
+      const url = new URL('/api/brat', window.location.origin);
+      url.searchParams.set('text', extra.text || getText());
+      url.searchParams.set('color', withoutHash(extra.color || getColor()));
+      if (extra.style2 ?? $('style2Input').checked) url.searchParams.set('style2', '1');
+      url.searchParams.set('w', '500');
+      url.searchParams.set('h', '500');
+      url.searchParams.set('blur', '0');
+      return url.toString();
+    }
+
+    function updateAll() {
+      const color = getColor();
+      $('colorPreview').style.background = color;
+      $('apiUrlBox').textContent = buildApiUrl();
+      $('commandBox').textContent = $('style2Input').checked
+        ? `.bratkode2 ${color} ${getText()}`
+        : `.bratkode ${color} ${getText()}`;
+      $('fetchCodeBox').textContent = `const apiUrl = '${buildApiUrl()}';\n\nconst res = await fetch(apiUrl);\nif (!res.ok) throw new Error('Gagal mengambil gambar dari API Brat');\n\nconst pngBuffer = Buffer.from(await res.arrayBuffer());`;
+      makeFrameUrls(false);
+    }
+
+    function renderPreview() {
+      const color = normalizeHex($('colorInput').value);
+      if (!color) {
+        $('statusWeb').textContent = 'Kode warna tidak valid. Contoh benar: #ff0000';
+        $('statusWeb').classList.add('warn');
+        return;
+      }
+      $('statusWeb').classList.remove('warn');
+      const url = buildApiUrl() + '&_t=' + Date.now();
+      $('previewImg').src = url;
+      $('statusWeb').textContent = 'Preview dibuat dari endpoint /api/brat.';
+      updateAll();
+    }
+
+    function downloadPng() {
+      const a = document.createElement('a');
+      a.href = buildApiUrl() + '&download=' + Date.now();
+      a.download = 'brat.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function openApiUrl() {
+      window.open(buildApiUrl(), '_blank');
+    }
+
+    async function copyValue(text, statusId) {
+      await navigator.clipboard.writeText(text);
+      $(statusId).textContent = 'Berhasil disalin.';
+    }
+
+    async function copyFrom(elementId, statusId) {
+      await copyValue($(elementId).textContent, statusId);
+    }
+
+    async function copyArea(elementId, statusId) {
+      await copyValue($(elementId).value, statusId);
+    }
+
+    function makeFrameUrls(showStatus = true) {
+      const words = getText().split(/\s+/).filter(Boolean);
+      const urls = [];
+      for (let i = 1; i <= words.length; i++) {
+        urls.push(buildApiUrl({ text: words.slice(0, i).join(' ') }));
+      }
+      $('frameUrlsBox').textContent = urls.join('\n');
+      if (showStatus) $('statusFrame').textContent = 'URL frame berhasil dibuat.';
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        $('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    ['textInput', 'colorInput', 'style2Input'].forEach(id => {
+      $(id).addEventListener('input', updateAll);
+      $(id).addEventListener('change', updateAll);
+    });
+
+    $('pluginCodeBox').value = PLUGIN_CODE;
+    $('frameCodeBox').value = FRAME_CODE;
+    updateAll();
+    renderPreview();
+  </script>
+</body>
+</html>
