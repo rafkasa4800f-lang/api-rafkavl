@@ -1,4 +1,4 @@
 export default {
-  alya: "adalah pokoknya",
+  alya: "Jagojago26",
   alyaBaseUrl: "https://api.alyachan.dev"
 };
