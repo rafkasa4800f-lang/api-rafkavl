@@ -5,7 +5,7 @@ import kunciapi from '../key/kunciapi.js';
 const corsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'Content-Type, Authorization, x-api-key, apikey'
+  'access-control-allow-headers': 'Content-Type, Authorization, x-api-key, X-API-Key, X-Access-Key, apikey'
 };
 
 function json(data, status = 200) {
@@ -32,25 +32,17 @@ function getAlyaBaseUrl() {
   return process.env.ALYA_BASE_URL || kunciapi.alyaBaseUrl || '';
 }
 
-function addApiKeyToUrl(url, apiKey) {
-  const u = new URL(url);
-
-  // sengaja dibuat fleksibel karena tiap API kadang beda nama param
-  if (apiKey) {
-    u.searchParams.set('apikey', apiKey);
-  }
-
-  return u.toString();
-}
-
 function getProviderHeaders(apiKey, extraHeaders = {}) {
   const headers = {
+    Accept: 'application/json, image/*, */*',
+    'User-Agent': 'Mozilla/5.0',
     ...extraHeaders
   };
 
   if (apiKey) {
-    // sengaja dikirim beberapa format agar cocok dengan banyak provider
     headers.Authorization = `Bearer ${apiKey}`;
+    headers['X-API-Key'] = apiKey;
+    headers['X-Access-Key'] = apiKey;
     headers['x-api-key'] = apiKey;
     headers.apikey = apiKey;
   }
@@ -58,10 +50,21 @@ function getProviderHeaders(apiKey, extraHeaders = {}) {
   return headers;
 }
 
+function buildGetProviderUrl(baseUrl, providerPath, params = {}) {
+  const providerUrl = new URL(joinUrl(baseUrl, providerPath));
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      providerUrl.searchParams.set(key, String(value));
+    }
+  }
+
+  return providerUrl.toString();
+}
+
 async function proxyProviderResponse(providerRes, fileBase = 'result') {
   const contentType = providerRes.headers.get('content-type') || 'application/octet-stream';
 
-  // Kalau API lain mengembalikan gambar langsung
   if (contentType.startsWith('image/')) {
     const buffer = await providerRes.arrayBuffer();
 
@@ -81,7 +84,6 @@ async function proxyProviderResponse(providerRes, fileBase = 'result') {
     });
   }
 
-  // Kalau API lain mengembalikan JSON
   if (contentType.includes('application/json')) {
     const data = await providerRes.json().catch(() => null);
 
@@ -92,7 +94,6 @@ async function proxyProviderResponse(providerRes, fileBase = 'result') {
     }, providerRes.status);
   }
 
-  // Fallback
   const text = await providerRes.text().catch(() => '');
 
   return json({
@@ -105,7 +106,6 @@ async function proxyProviderResponse(providerRes, fileBase = 'result') {
 async function buildProviderBodyFromRequest(request) {
   const contentType = request.headers.get('content-type') || '';
 
-  // Kalau bot kirim file pakai form-data
   if (contentType.includes('multipart/form-data')) {
     const form = await request.formData();
 
@@ -115,7 +115,6 @@ async function buildProviderBodyFromRequest(request) {
     };
   }
 
-  // Kalau bot kirim JSON, contoh: { "url": "https://..." }
   if (contentType.includes('application/json')) {
     const body = await request.json().catch(() => ({}));
 
@@ -127,7 +126,6 @@ async function buildProviderBodyFromRequest(request) {
     };
   }
 
-  // Kalau raw buffer
   const body = await request.arrayBuffer();
 
   return {
@@ -150,22 +148,13 @@ export function buildAlyachanImageToolHandler(config = {}) {
     const url = new URL(request.url);
     const imageUrl = url.searchParams.get('url') || url.searchParams.get('image');
 
-    // GET untuk info kalau tidak ada url
     if (!imageUrl) {
       return json({
         status: true,
         feature: featureName,
         message: `${featureName} backend aktif.`,
-        note: 'API ini adalah proxy backend. API key diambil dari key/kunciapi.js.',
-        usage: {
-          get: `${url.origin}${url.pathname}?url=https://example.com/image.jpg`,
-          post_json: {
-            url: 'https://example.com/image.jpg'
-          },
-          post_form: {
-            image: 'upload file gambar'
-          }
-        },
+        note: 'Gunakan parameter ?url=link_gambar',
+        usage: `${url.origin}${url.pathname}?url=https://example.com/image.jpg`,
         successMessage
       });
     }
@@ -180,20 +169,35 @@ export function buildAlyachanImageToolHandler(config = {}) {
       }, 500);
     }
 
-    const providerUrlRaw = joinUrl(alyaBaseUrl, providerPath);
-    const providerUrl = addApiKeyToUrl(providerUrlRaw, alyaKey);
+    if (!alyaKey) {
+      return json({
+        status: false,
+        message: 'alya API key belum diisi di key/kunciapi.js'
+      }, 500);
+    }
 
-    const providerRes = await fetch(providerUrl, {
-      method: 'POST',
-      headers: getProviderHeaders(alyaKey, {
-        'content-type': 'application/json'
-      }),
-      body: JSON.stringify({
+    try {
+      // INI FIX UTAMANYA:
+      // API Jagpro/Alya lama dipanggil pakai GET, bukan POST.
+      const providerUrl = buildGetProviderUrl(alyaBaseUrl, providerPath, {
         url: imageUrl
-      })
-    });
+      });
 
-    return await proxyProviderResponse(providerRes, fileBase);
+      const providerRes = await fetch(providerUrl, {
+        method: 'GET',
+        headers: getProviderHeaders(alyaKey)
+      });
+
+      return await proxyProviderResponse(providerRes, fileBase);
+
+    } catch (error) {
+      return json({
+        status: false,
+        feature: featureName,
+        message: `Gagal menjalankan ${featureName}.`,
+        error: error?.message || String(error)
+      }, 500);
+    }
   }
 
   async function POST(request) {
@@ -214,13 +218,32 @@ export function buildAlyachanImageToolHandler(config = {}) {
       }, 500);
     }
 
-    const providerUrlRaw = joinUrl(alyaBaseUrl, providerPath);
-    const providerUrl = addApiKeyToUrl(providerUrlRaw, alyaKey);
-
     try {
+      const contentType = request.headers.get('content-type') || '';
+
+      // Kalau POST JSON berisi { url: "..." }, tetap lempar ke provider pakai GET.
+      if (contentType.includes('application/json')) {
+        const bodyJson = await request.json().catch(() => ({}));
+        const imageUrl = bodyJson.url || bodyJson.image;
+
+        if (imageUrl) {
+          const providerUrl = buildGetProviderUrl(alyaBaseUrl, providerPath, {
+            url: imageUrl
+          });
+
+          const providerRes = await fetch(providerUrl, {
+            method: 'GET',
+            headers: getProviderHeaders(alyaKey)
+          });
+
+          return await proxyProviderResponse(providerRes, fileBase);
+        }
+      }
+
+      // Fallback kalau suatu saat provider lain memang butuh POST file.
       const { body, headers } = await buildProviderBodyFromRequest(request);
 
-      const providerRes = await fetch(providerUrl, {
+      const providerRes = await fetch(joinUrl(alyaBaseUrl, providerPath), {
         method: 'POST',
         headers: getProviderHeaders(alyaKey, headers),
         body
