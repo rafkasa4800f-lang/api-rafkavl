@@ -3,12 +3,14 @@
   "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Web + API Brat image-only siap deploy Vercel, lengkap dengan tester dan kode plugin bot API.",
+  "description": "Web dan API Rafkavl siap deploy ke Vercel.",
   "scripts": {
     "dev": "vercel dev",
     "start": "vercel dev"
   },
   "dependencies": {
+    "axios": "^1.12.0",
+    "express": "^5.1.0",
     "brat-canvas": "file:./brat-canvas"
   },
   "engines": {
