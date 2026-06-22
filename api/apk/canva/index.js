@@ -11,7 +11,7 @@ const router = express.Router();
 
 // 1. Endpoint untuk menampilkan halaman HTML
 router.get('/api/apk/canva', (req, res) => {
-    res.sendFile(path.join(__dirname, 'view.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 2. Endpoint untuk memproses Suntik
